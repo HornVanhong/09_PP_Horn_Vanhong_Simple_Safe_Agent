@@ -12,5 +12,12 @@
     "category": "accessory",
     "price": 99.0,
     "stock": 0
+  },
+  {
+    "id": 3,
+    "name": "Mechanical Keyboard RGB",
+    "category": "accessory",
+    "price": 120.0,
+    "stock": 12
   }
 ]
