@@ -166,3 +166,22 @@ We found the Dell XPS 15 Laptop (ID: 1), priced at $1,500.00. It is currently in
 [FINAL RESPONSE]:
 I apologize, but as a customer, you do not have permission to delete products from the catalog. This action is restricted to administrators.
 ```
+
+---
+
+### Screenshots
+
+The actual terminal execution screenshots are stored in the [`screenshots/`](screenshots/) directory:
+
+1. **Customer Multi-Step Search & Check Stock**:
+   ![Customer Search and Stock](screenshots/01_customer_multistep.png)
+
+2. **Permission Guard (Customer Blocked)**:
+   ![Permission Denied](screenshots/02_permission_denied.png)
+
+3. **Admin Allowed Deletion**:
+   ![Admin Delete](screenshots/03_admin_delete.png)
+
+4. **Automated Unit Tests**:
+   ![Test Suite](screenshots/04_unit_tests.png)
+
