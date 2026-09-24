@@ -1,9 +1,3 @@
-"""
-tools.py
-Actual tool implementations and underlying business logic.
-Provides Python functions callable by the agent.
-"""
-
 import json
 import os
 from typing import Dict, Any, List
@@ -36,7 +30,6 @@ DEFAULT_PRODUCTS = [
 
 
 def _load_data() -> List[Dict[str, Any]]:
-    """Load product catalog from JSON file, initializing if not present."""
     if not os.path.exists(DATA_FILE):
         os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
         _save_data(DEFAULT_PRODUCTS)
@@ -49,14 +42,12 @@ def _load_data() -> List[Dict[str, Any]]:
 
 
 def _save_data(data: List[Dict[str, Any]]) -> None:
-    """Save product catalog back to JSON file."""
     os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
 
 
 def search_products(query: str) -> Dict[str, Any]:
-    """Search products where query matches name or category."""
     products = _load_data()
     q = query.lower()
     matches = [
@@ -77,7 +68,6 @@ def search_products(query: str) -> Dict[str, Any]:
 
 
 def check_stock(product_id: int) -> Dict[str, Any]:
-    """Retrieve stock level and status for a specific product ID."""
     products = _load_data()
     for p in products:
         if p["id"] == product_id:
@@ -96,7 +86,6 @@ def check_stock(product_id: int) -> Dict[str, Any]:
 
 
 def delete_product(product_id: int) -> Dict[str, Any]:
-    """Permanently remove a product from the database (Admin only)."""
     products = _load_data()
     initial_len = len(products)
     products = [p for p in products if p["id"] != product_id]

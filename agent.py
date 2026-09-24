@@ -1,14 +1,3 @@
-"""
-agent.py
-Autonomous Agent Loop implementation.
-Handles:
-- LLM interaction and prompt formatting
-- Tool registration and exposure
-- Action proposal -> Harness verification -> Tool execution -> Observation -> Next step decision
-- Iteration limit enforcement
-- Offline Mock/Simulation mode for demonstrations without an API key
-"""
-
 import os
 import json
 import re
@@ -18,13 +7,10 @@ from dotenv import load_dotenv
 from schemas import TOOLS_SPEC
 from harness import SafetyHarness
 
-# Load variables from .env if present
 load_dotenv()
 
 
 class SafeAgent:
-    """Autonomous agent with tool invocation and safety harness checks."""
-
     def __init__(
         self,
         user_role: str = "customer",
@@ -40,13 +26,11 @@ class SafeAgent:
         self.harness = SafetyHarness(user_role=self.user_role)
         self.mock_mode = mock_mode
 
-        # Check API key if not in explicit mock mode
+        # If no API key is set, default to simulation mode for local testing
         resolved_key = api_key or os.getenv("OPENAI_API_KEY")
         if self.mock_mode or not resolved_key or resolved_key.strip() in ["", "your_openai_api_key_here"]:
             self.client = None
-            if not self.mock_mode and (not resolved_key or resolved_key.strip() in ["", "your_openai_api_key_here"]):
-                # Default to mock mode if no API key is configured so user can test immediately
-                self.mock_mode = True
+            self.mock_mode = True
         else:
             try:
                 from openai import OpenAI
@@ -59,13 +43,11 @@ class SafeAgent:
                 self.mock_mode = True
 
     def run(self, user_prompt: str) -> str:
-        """Execute the agent loop for the given user prompt."""
         if self.mock_mode:
             return self._run_mock_loop(user_prompt)
         return self._run_live_loop(user_prompt)
 
     def _run_live_loop(self, user_prompt: str) -> str:
-        """Run loop using live OpenAI LLM API."""
         messages = [
             {
                 "role": "system",
@@ -100,12 +82,10 @@ class SafeAgent:
             response_message = response.choices[0].message
             messages.append(response_message)
 
-            # Check if LLM decided it has completed the request (no tool calls)
             if not response_message.tool_calls:
                 print("[DECISION] Final answer reached.")
                 return response_message.content or ""
 
-            # Process proposed tool calls
             for tool_call in response_message.tool_calls:
                 tool_name = tool_call.function.name
                 try:
@@ -115,11 +95,10 @@ class SafeAgent:
 
                 print(f"[ACTION PROPOSED] Tool: '{tool_name}' | Args: {args}")
 
-                # Pass through the Safety Harness gatekeeper
+                # Call safety harness
                 tool_result = self.harness.execute_tool_safely(tool_name, args)
                 print(f"[OBSERVATION] Result: {tool_result}")
 
-                # Send observation back to the LLM
                 messages.append({
                     "role": "tool",
                     "tool_call_id": tool_call.id,
@@ -134,18 +113,14 @@ class SafeAgent:
         return limit_msg
 
     def _run_mock_loop(self, user_prompt: str) -> str:
-        """
-        Deterministic simulation mode for demonstration, grading, and testing
-        when an OpenAI API key is not present. Implements the exact same
-        Decision -> Action -> Harness -> Observation -> Decision cycle.
-        """
+        """Simulation mode to test the agent loop offline."""
         print(f"\n[AGENT START] Mode: SIMULATION / DEMO | Role: '{self.user_role}' | Max Iterations: {self.max_iterations}")
         print(f"[USER PROMPT]: {user_prompt}")
 
         prompt_lower = user_prompt.lower()
         iteration = 0
 
-        # Scenario 1: Delete product
+        # Delete product
         if "delete" in prompt_lower or "remove" in prompt_lower:
             match = re.search(r"(\d+)", user_prompt)
             prod_id = int(match.group(1)) if match else 1
@@ -169,7 +144,7 @@ class SafeAgent:
             else:
                 return f"Could not delete product: {obs.get('message')}"
 
-        # Scenario 2: Validation test (invalid/negative ID)
+        # Invalid/negative product ID
         elif re.search(r"-\d+", user_prompt) or "id 0" in prompt_lower or "id: 0" in prompt_lower:
             match = re.search(r"(-\d+)", user_prompt)
             invalid_id = int(match.group(1)) if match else -1
@@ -184,29 +159,25 @@ class SafeAgent:
             print("[DECISION] Final answer reached.")
             return f"Input validation rejected the request: Product ID must be a positive integer greater than 0. Harness error: {obs.get('message')}"
 
-        # Scenario 3: Search + Check stock multi-step
+        # Search and check stock
         elif "find" in prompt_lower or "search" in prompt_lower or "check" in prompt_lower or "laptop" in prompt_lower or "mouse" in prompt_lower:
             keyword = "laptop" if "laptop" in prompt_lower else ("mouse" if "mouse" in prompt_lower else "accessory")
 
-            # Step 1: Search
             iteration += 1
             print(f"\n--- Iteration {iteration}/{self.max_iterations} ---")
             print(f"[ACTION PROPOSED] Tool: 'search_products' | Args: {{'query': '{keyword}'}}")
             search_obs = self.harness.execute_tool_safely("search_products", {"query": keyword})
             print(f"[OBSERVATION] Result: {search_obs}")
 
-            # If user also asked for stock or check
             if "stock" in prompt_lower or "check" in prompt_lower or search_obs.get("results"):
                 found_id = search_obs["results"][0]["id"] if search_obs.get("results") else 1
 
-                # Step 2: Check stock
                 iteration += 1
                 print(f"\n--- Iteration {iteration}/{self.max_iterations} ---")
                 print(f"[ACTION PROPOSED] Tool: 'check_stock' | Args: {{'product_id': {found_id}}}")
                 stock_obs = self.harness.execute_tool_safely("check_stock", {"product_id": found_id})
                 print(f"[OBSERVATION] Result: {stock_obs}")
 
-                # Step 3: Conclude
                 iteration += 1
                 print(f"\n--- Iteration {iteration}/{self.max_iterations} ---")
                 print("[DECISION] Final answer reached.")
@@ -220,7 +191,7 @@ class SafeAgent:
             print("[DECISION] Final answer reached.")
             return f"Found {search_obs.get('count', 0)} product(s): {search_obs.get('results')}"
 
-        # General inquiry
+        # Default fallback
         iteration += 1
         print(f"\n--- Iteration {iteration}/{self.max_iterations} ---")
         print("[DECISION] Final answer reached directly (no tools needed).")

@@ -1,16 +1,10 @@
-"""
-main.py
-Application entry point for the Simple Safe Agent.
-Supports interactive CLI, mock simulation mode, and direct prompt execution.
-"""
-
 import sys
 import argparse
 from agent import SafeAgent
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Run Topic 07 Simple Safe Agent")
+    parser = argparse.ArgumentParser(description="Simple Safe Agent CLI")
     parser.add_argument(
         "--role",
         choices=["customer", "admin"],
@@ -21,12 +15,12 @@ def parse_args():
         "--prompt",
         type=str,
         default=None,
-        help="Direct prompt to execute without starting interactive REPL"
+        help="Prompt to run directly"
     )
     parser.add_argument(
         "--mock",
         action="store_true",
-        help="Force simulation mode (runs agent loop without OpenAI API key)"
+        help="Run in offline simulation mode"
     )
     return parser.parse_args()
 

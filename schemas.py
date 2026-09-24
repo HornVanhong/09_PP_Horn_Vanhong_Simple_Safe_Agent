@@ -1,47 +1,27 @@
-"""
-schemas.py
-Explicit tool input/output schemas using Pydantic.
-Defines parameter types, constraints, and descriptions for agent tool calling.
-"""
-
 from typing import List, Dict, Any
 from pydantic import BaseModel, Field
 
 
+# Tool input models
 class SearchProductsInput(BaseModel):
-    """Schema for searching products by keyword or category."""
-    query: str = Field(
-        ...,
-        min_length=1,
-        description="The search keyword or category (e.g., 'laptop', 'mouse', 'accessory')."
-    )
+    query: str = Field(..., min_length=1, description="Keyword or category to search")
 
 
 class CheckStockInput(BaseModel):
-    """Schema for checking stock of a product by ID."""
-    product_id: int = Field(
-        ...,
-        gt=0,
-        description="The unique positive integer ID of the product."
-    )
+    product_id: int = Field(..., gt=0, description="Product ID to check stock for")
 
 
 class DeleteProductInput(BaseModel):
-    """Schema for deleting a product from inventory (Admin action)."""
-    product_id: int = Field(
-        ...,
-        gt=0,
-        description="The unique positive integer ID of the product to delete permanently."
-    )
+    product_id: int = Field(..., gt=0, description="Product ID to delete")
 
 
-# OpenAI Function Calling format specification
+# Tool definitions for OpenAI function calling
 TOOLS_SPEC: List[Dict[str, Any]] = [
     {
         "type": "function",
         "function": {
             "name": "search_products",
-            "description": "Search the product catalog by keyword or category.",
+            "description": "Search products by keyword or category name",
             "parameters": SearchProductsInput.model_json_schema()
         }
     },
@@ -49,7 +29,7 @@ TOOLS_SPEC: List[Dict[str, Any]] = [
         "type": "function",
         "function": {
             "name": "check_stock",
-            "description": "Check the available stock quantity and details for a specific product ID.",
+            "description": "Check stock quantity for a product ID",
             "parameters": CheckStockInput.model_json_schema()
         }
     },
@@ -57,7 +37,7 @@ TOOLS_SPEC: List[Dict[str, Any]] = [
         "type": "function",
         "function": {
             "name": "delete_product",
-            "description": "Delete a product permanently from the catalog (Admin only).",
+            "description": "Delete a product from the catalog (Admin only)",
             "parameters": DeleteProductInput.model_json_schema()
         }
     }
